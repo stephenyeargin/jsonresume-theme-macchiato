@@ -13,12 +13,30 @@ describe('jest-image-snapshot usage with an image received from puppeteer', () =
 
   beforeAll(async () => {
     browser = await puppeteer.launch();
-    const resumeJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'resume.json')));
-    const resumeHtml = render(resumeJson);
-    fs.writeFileSync(path.join(rootDir, 'resume.html'), resumeHtml);
   });
 
   it('works', async () => {
+    const resumeJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'resume.json')));
+    const resumeHtml = render(resumeJson);
+    fs.writeFileSync(path.join(rootDir, 'resume.html'), resumeHtml);
+
+    const page = await browser.newPage();
+    await page.goto(path.join('file://', __dirname, '/../../resume.html'));
+    const image = await page.screenshot({
+      fullPage: true,
+      omitBackground: true,
+    });
+
+    expect(image).toMatchImageSnapshot();
+  });
+
+  it('works with company fallback', async () => {
+    const resumeJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'resume.json')));
+    resumeJson.work[0].company = resumeJson.work[0].name;
+    delete resumeJson.work[0].name;
+    const resumeHtml = render(resumeJson);
+    fs.writeFileSync(path.join(rootDir, 'resume.html'), resumeHtml);
+
     const page = await browser.newPage();
     await page.goto(path.join('file://', __dirname, '/../../resume.html'));
     const image = await page.screenshot({
